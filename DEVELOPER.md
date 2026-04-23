@@ -54,6 +54,11 @@ Owns realized execution workspaces, runtime service inventory, and the durable s
 | Field | Value |
 | --- | --- |
 | Depends On | `auth-core`, `org-tenant-core`, `role-policy-core`, `audit-core` |
+| Recommended Plugins | None |
+| Capability Enhancing | None |
+| Integration Only | None |
+| Suggested Packs | None |
+| Standalone Supported | Yes |
 | Requested Capabilities | `ui.register.admin`, `api.rest.mount`, `data.write.execution` |
 | Provides Capabilities | `execution.workspaces`, `execution.runtime-services` |
 | Owns Data | `execution.workspaces`, `execution.runtime-services` |
