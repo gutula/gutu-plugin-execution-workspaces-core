@@ -1,20 +1,35 @@
 # Execution Workspaces Core Developer Guide
 
+Governed run and issue workspaces with preview, browser, code, and runtime service lifecycle controls.
+
 **Maturity Tier:** `Hardened`
 
 ## Purpose And Architecture Role
 
-`execution-workspaces-core` is the workspace and runtime-service control plane for governed run execution. It gives the platform a durable place to represent realized workspaces, preview services, code runners, and future delegated runtime environments.
+Owns realized execution workspaces, runtime service inventory, and the durable state used to operate sandboxed AI execution environments.
+
+### This plugin is the right fit when
+
+- You need **execution workspaces**, **runtime services**, **workspace realization** as a governed domain boundary.
+- You want to integrate through declared actions, resources, jobs, workflows, and UI surfaces instead of implicit side effects.
+- You need the host application to keep plugin boundaries honest through manifest capabilities, permissions, and verification lanes.
+
+### This plugin is intentionally not
+
+- Not an everything-and-the-kitchen-sink provider abstraction layer.
+- Not a substitute for explicit approval, budgeting, and audit governance in the surrounding platform.
 
 ## Repo Map
 
 | Path | Purpose |
 | --- | --- |
-| `framework/builtin-plugins/execution-workspaces-core` | Publishable plugin package. |
-| `framework/builtin-plugins/execution-workspaces-core/src` | Actions, resources, services, policies, and admin UI exports. |
-| `framework/builtin-plugins/execution-workspaces-core/tests` | Unit, contract, integration, and migration coverage. |
-| `framework/builtin-plugins/execution-workspaces-core/db/schema.ts` | Durable schema for workspaces and runtime services. |
-| `framework/builtin-plugins/execution-workspaces-core/docs` | Internal supporting domain docs for execution environments. |
+| `package.json` | Root extracted-repo manifest, workspace wiring, and repo-level script entrypoints. |
+| `framework/builtin-plugins/execution-workspaces-core` | Nested publishable plugin package. |
+| `framework/builtin-plugins/execution-workspaces-core/src` | Runtime source, actions, resources, services, and UI exports. |
+| `framework/builtin-plugins/execution-workspaces-core/tests` | Unit, contract, integration, and migration coverage where present. |
+| `framework/builtin-plugins/execution-workspaces-core/docs` | Internal domain-doc source set kept in sync with this guide. |
+| `framework/builtin-plugins/execution-workspaces-core/db/schema.ts` | Database schema contract when durable state is owned. |
+| `framework/builtin-plugins/execution-workspaces-core/src/postgres.ts` | SQL migration and rollback helpers when exported. |
 
 ## Manifest Contract
 
@@ -23,9 +38,16 @@
 | Package Name | `@plugins/execution-workspaces-core` |
 | Manifest ID | `execution-workspaces-core` |
 | Display Name | Execution Workspaces Core |
+| Domain Group | AI Systems |
+| Default Category | AI & Automation / Execution Workspaces |
+| Version | `0.1.0` |
 | Kind | `plugin` |
 | Trust Tier | `first-party` |
 | Review Tier | `R1` |
+| Isolation Profile | `same-process-trusted` |
+| Framework Compatibility | ^0.1.0 |
+| Runtime Compatibility | bun>=1.3.12 |
+| Database Compatibility | postgres, sqlite |
 
 ## Dependency Graph And Capability Requests
 
@@ -36,70 +58,160 @@
 | Provides Capabilities | `execution.workspaces`, `execution.runtime-services` |
 | Owns Data | `execution.workspaces`, `execution.runtime-services` |
 
+### Dependency interpretation
+
+- Direct plugin dependencies describe package-level coupling that must already be present in the host graph.
+- Requested capabilities tell the host what platform services or sibling plugins this package expects to find.
+- Provided capabilities and owned data tell integrators what this package is authoritative for.
+
 ## Public Integration Surfaces
 
-| Type | ID | Notes |
+| Type | ID / Symbol | Access / Mode | Notes |
+| --- | --- | --- | --- |
+| Action | `execution.workspaces.realize` | Permission: `execution.workspaces.realize` | Idempotent<br>Audited |
+| Action | `execution.runtime-services.start` | Permission: `execution.runtime-services.start` | Idempotent<br>Audited |
+| Action | `execution.runtime-services.restart` | Permission: `execution.runtime-services.restart` | Idempotent<br>Audited |
+| Action | `execution.runtime-services.stop` | Permission: `execution.runtime-services.stop` | Idempotent<br>Audited |
+| Resource | `execution.workspaces` | Portal disabled | Governed realized workspaces for runs, issues, and preview environments.<br>Purpose: Track isolation posture, environment scope, policy profile, and preview ownership for execution spaces.<br>Admin auto-CRUD enabled<br>Fields: `label`, `status`, `policyProfile`, `isolationMode`, `environmentScope`, `updatedAt` |
+| Resource | `execution.runtime-services` | Portal disabled | Lifecycle state for preview and runner services attached to execution workspaces.<br>Purpose: Expose start, restart, stop, and failure posture for runtime services.<br>Admin auto-CRUD enabled<br>Fields: `workspaceId`, `label`, `kind`, `status`, `lastTransitionAt` |
+
+
+
+
+
+### UI Surface Summary
+
+| Surface | Present | Notes |
 | --- | --- | --- |
-| Action | `execution.workspaces.realize` | Creates or updates a governed workspace record. |
-| Action | `execution.runtime-services.start` | Starts a runtime service for a workspace. |
-| Action | `execution.runtime-services.restart` | Restarts a runtime service and updates lifecycle state. |
-| Action | `execution.runtime-services.stop` | Stops a runtime service and persists the transition. |
-| Resource | `execution.workspaces` | Realized workspace inventory and policy posture. |
-| Resource | `execution.runtime-services` | Runtime service lifecycle state. |
-| Workspace | `execution` | Operator-facing execution control room. |
+| UI Surface | Yes | A bounded UI surface export is present. |
+| Admin Contributions | Yes | Additional admin workspace contributions are exported. |
+| Zone/Canvas Extension | No | No dedicated zone extension export. |
 
 ## Hooks, Events, And Orchestration
 
-- No hook bus is exported.
-- Higher-level orchestration systems reference these records to decide where runs, previews, and recovery work should execute.
-- Runtime-service lifecycle stays explicit so later out-of-process handoff can reuse the same public contract.
+This plugin should be integrated through **explicit commands/actions, resources, jobs, workflows, and the surrounding Gutu event runtime**. It must **not** be documented as a generic WordPress-style hook system unless such a hook API is explicitly exported.
+
+- No standalone plugin-owned lifecycle event feed is exported today.
+- No plugin-owned job catalog is exported today.
+- No plugin-owned workflow catalog is exported today.
+- Recommended composition pattern: invoke actions, read resources, then let the surrounding Gutu command/event/job runtime handle downstream automation.
 
 ## Storage, Schema, And Migration Notes
 
+- Database compatibility: `postgres`, `sqlite`
 - Schema file: `framework/builtin-plugins/execution-workspaces-core/db/schema.ts`
-- Durable records cover execution workspaces and runtime services.
-- Seed data provides one ops review workspace with preview and code services for regression coverage.
+- SQL helper file: `framework/builtin-plugins/execution-workspaces-core/src/postgres.ts`
+- Migration lane present: Yes
+
+The plugin does not export a dedicated SQL helper module today. Treat the schema and resources as the durable contract instead of inventing undocumented SQL behavior.
 
 ## Failure Modes And Recovery
 
-- Unknown workspace or service references fail before state is mutated.
-- Restart transitions refresh service status and last-transition time for operator visibility.
-- Stopping a service also updates the workspace summary so the control room does not drift.
-- Cross-tenant service changes are rejected by service lookups and permission checks.
+- Action inputs can fail schema validation or permission evaluation before any durable mutation happens.
+- If downstream automation is needed, the host must add it explicitly instead of assuming this plugin emits jobs.
+- There is no separate lifecycle-event feed to rely on today; do not build one implicitly from internal details.
+- Schema regressions are expected to show up in the migration lane and should block shipment.
 
 ## Mermaid Flows
 
+### Primary Lifecycle
+
 ```mermaid
 flowchart LR
-  realize["Realize workspace"] --> start["Start runtime service"]
-  start --> restart["Restart service"]
-  restart --> stop["Stop service"]
-  stop --> control["Execution control room"]
+  caller["Host or operator"] --> action["execution.workspaces.realize"]
+  action --> validation["Schema + permission guard"]
+  validation --> service["Execution Workspaces Core service layer"]
+  service --> state["execution.workspaces"]
+  state --> ui["Admin contributions"]
 ```
+
+
 
 ## Integration Recipes
 
-```ts
-import {
-  realizeExecutionWorkspaceAction,
-  startRuntimeServiceAction,
-  ExecutionWorkspaceResource,
-  RuntimeServiceResource
-} from "@plugins/execution-workspaces-core";
+### 1. Host wiring
 
-console.log(realizeExecutionWorkspaceAction.id);
-console.log(startRuntimeServiceAction.id);
-console.log(ExecutionWorkspaceResource.id, RuntimeServiceResource.id);
+```ts
+import { manifest, realizeExecutionWorkspaceAction, ExecutionWorkspaceResource, adminContributions, uiSurface } from "@plugins/execution-workspaces-core";
+
+export const pluginSurface = {
+  manifest,
+  realizeExecutionWorkspaceAction,
+  ExecutionWorkspaceResource,
+  
+  
+  adminContributions,
+  uiSurface
+};
 ```
+
+Use this pattern when your host needs to register the plugin’s declared exports without reaching into internal file paths.
+
+### 2. Action-first orchestration
+
+```ts
+import { manifest, realizeExecutionWorkspaceAction } from "@plugins/execution-workspaces-core";
+
+console.log("plugin", manifest.id);
+console.log("action", realizeExecutionWorkspaceAction.id);
+```
+
+- Prefer action IDs as the stable integration boundary.
+- Respect the declared permission, idempotency, and audit metadata instead of bypassing the service layer.
+- Treat resource IDs as the read-model boundary for downstream consumers.
+
+### 3. Cross-plugin composition
+
+- Compose this plugin through action invocations and resource reads.
+- If downstream automation becomes necessary, add it in the surrounding Gutu command/event/job runtime instead of assuming this plugin already exports a hook surface.
 
 ## Test Matrix
 
-- Root scripts: `bun run build`, `bun run typecheck`, `bun run lint`, `bun run test`, `bun run test:contracts`, `bun run test:integration`, `bun run test:migrations`, `bun run test:unit`, `bun run docs:check`
-- Unit focus: workspace realization and runtime-service lifecycle
-- Contract focus: execution workspace, route exposure, command visibility
-- Integration focus: runtime-service control flow
+| Lane | Present | Evidence |
+| --- | --- | --- |
+| Build | Yes | `bun run build` |
+| Typecheck | Yes | `bun run typecheck` |
+| Lint | Yes | `bun run lint` |
+| Test | Yes | `bun run test` |
+| Unit | Yes | 2 file(s) |
+| Contracts | Yes | 2 file(s) |
+| Integration | Yes | 1 file(s) |
+| Migrations | Yes | 1 file(s) |
+
+### Verification commands
+
+- `bun run build`
+- `bun run typecheck`
+- `bun run lint`
+- `bun run test`
+- `bun run test:contracts`
+- `bun run test:integration`
+- `bun run test:migrations`
+- `bun run test:unit`
+- `bun run docs:check`
 
 ## Current Truth And Recommended Next
 
-- Current truth: `execution-workspaces-core` is a durable control-plane model for execution environments, not yet a real infrastructure provisioner.
-- Recommended next: add environment bootstrap hooks, isolation verification, and delegated runner telemetry.
+### Current truth
+
+- Exports 4 governed actions: `execution.workspaces.realize`, `execution.runtime-services.start`, `execution.runtime-services.restart`, `execution.runtime-services.stop`.
+- Owns 2 resource contracts: `execution.workspaces`, `execution.runtime-services`.
+- Adds richer admin workspace contributions on top of the base UI surface.
+- Defines a durable data schema contract even though no explicit SQL helper module is exported.
+
+### Current gaps
+
+- No standalone plugin-owned event, job, or workflow catalog is exported yet; compose it through actions, resources, and the surrounding Gutu runtime.
+- The repo does not yet export a domain parity catalog with owned entities, reports, settings surfaces, and exception queues.
+
+### Recommended next
+
+- Deepen runtime diagnostics and lifecycle reconciliation as more AI and automation flows depend on long-lived execution environments.
+- Add clearer infrastructure handoff guidance where external runtimes or clusters start backing these workspaces.
+- Add deeper provider, persistence, or evaluation integrations only where the shipped control-plane contracts already prove stable.
+- Expand operator diagnostics and release gating where the current lifecycle already exposes strong evidence paths.
+- Promote important downstream reactions into explicit commands, jobs, or workflow steps instead of relying on implicit coupling.
+
+### Later / optional
+
+- More connector breadth, richer evaluation libraries, and domain-specific copilots after the baseline contracts settle.

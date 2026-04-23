@@ -1,5 +1,14 @@
-# Glossary
+# Execution Workspaces Core Glossary
 
-- Workspace: A governed execution environment for a run, issue, or preview context.
-- Runtime Service: A preview, browser, code, or listener service attached to a workspace.
-- Isolation Mode: The runtime boundary selected for the workspace.
+| Term | Meaning |
+| --- | --- |
+| Execution Workspaces Core | Governed run and issue workspaces with preview, browser, code, and runtime service lifecycle controls. |
+| execution.workspaces | Capability published by this plugin manifest. |
+| execution.runtime-services | Capability published by this plugin manifest. |
+| execution.workspaces.realize |  |
+| execution.runtime-services.start |  |
+| execution.runtime-services.restart |  |
+| execution.runtime-services.stop |  |
+| Execution workspaces | Primary focus area for Execution Workspaces Core. |
+| Runtime services | Primary focus area for Execution Workspaces Core. |
+| Workspace realization | Primary focus area for Execution Workspaces Core. |

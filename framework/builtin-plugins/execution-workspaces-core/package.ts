@@ -5,6 +5,12 @@ export default definePackage({
   kind: "plugin",
   version: "0.1.0",
   displayName: "Execution Workspaces Core",
+  defaultCategory: {
+    id: "ai_automation",
+    label: "AI & Automation",
+    subcategoryId: "execution_workspaces",
+    subcategoryLabel: "Execution Workspaces"
+  },
   description: "Governed run and issue workspaces with preview, browser, code, and runtime service lifecycle controls.",
   extends: [],
   dependsOn: [

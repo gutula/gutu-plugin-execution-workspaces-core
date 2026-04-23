@@ -1,5 +1,118 @@
-# Flows
+# Execution Workspaces Core Flows
 
-1. Realize a workspace with policy, isolation, and environment metadata.
-2. Start, restart, or stop attached runtime services.
-3. Surface workspace and service posture in the execution control room.
+## Happy paths
+
+- `execution.workspaces.realize`: Governed action exported by this plugin.
+- `execution.runtime-services.start`: Governed action exported by this plugin.
+- `execution.runtime-services.restart`: Governed action exported by this plugin.
+- `execution.runtime-services.stop`: Governed action exported by this plugin.
+
+## Operational scenario matrix
+
+- No operational scenario catalog is exported today.
+
+## Action-level flows
+
+### `execution.workspaces.realize`
+
+Governed action exported by this plugin.
+
+Permission: `execution.workspaces.realize`
+
+Business purpose: Expose the plugin’s write boundary through a validated, auditable action contract.
+
+Preconditions:
+
+- Caller input must satisfy the action schema exported by the plugin.
+- The caller must satisfy the declared permission and any host-level installation constraints.
+- Integration should honor the action’s idempotent semantics.
+
+Side effects:
+
+- Mutates or validates state owned by `execution.workspaces`, `execution.runtime-services`.
+
+Forbidden shortcuts:
+
+- Do not bypass the action contract with undocumented service mutations in application code.
+- Do not document extra hooks, retries, or lifecycle semantics unless they are explicitly exported here.
+
+
+### `execution.runtime-services.start`
+
+Governed action exported by this plugin.
+
+Permission: `execution.runtime-services.start`
+
+Business purpose: Expose the plugin’s write boundary through a validated, auditable action contract.
+
+Preconditions:
+
+- Caller input must satisfy the action schema exported by the plugin.
+- The caller must satisfy the declared permission and any host-level installation constraints.
+- Integration should honor the action’s idempotent semantics.
+
+Side effects:
+
+- Mutates or validates state owned by `execution.workspaces`, `execution.runtime-services`.
+
+Forbidden shortcuts:
+
+- Do not bypass the action contract with undocumented service mutations in application code.
+- Do not document extra hooks, retries, or lifecycle semantics unless they are explicitly exported here.
+
+
+### `execution.runtime-services.restart`
+
+Governed action exported by this plugin.
+
+Permission: `execution.runtime-services.restart`
+
+Business purpose: Expose the plugin’s write boundary through a validated, auditable action contract.
+
+Preconditions:
+
+- Caller input must satisfy the action schema exported by the plugin.
+- The caller must satisfy the declared permission and any host-level installation constraints.
+- Integration should honor the action’s idempotent semantics.
+
+Side effects:
+
+- Mutates or validates state owned by `execution.workspaces`, `execution.runtime-services`.
+
+Forbidden shortcuts:
+
+- Do not bypass the action contract with undocumented service mutations in application code.
+- Do not document extra hooks, retries, or lifecycle semantics unless they are explicitly exported here.
+
+
+### `execution.runtime-services.stop`
+
+Governed action exported by this plugin.
+
+Permission: `execution.runtime-services.stop`
+
+Business purpose: Expose the plugin’s write boundary through a validated, auditable action contract.
+
+Preconditions:
+
+- Caller input must satisfy the action schema exported by the plugin.
+- The caller must satisfy the declared permission and any host-level installation constraints.
+- Integration should honor the action’s idempotent semantics.
+
+Side effects:
+
+- Mutates or validates state owned by `execution.workspaces`, `execution.runtime-services`.
+
+Forbidden shortcuts:
+
+- Do not bypass the action contract with undocumented service mutations in application code.
+- Do not document extra hooks, retries, or lifecycle semantics unless they are explicitly exported here.
+
+
+## Cross-package interactions
+
+- Direct dependencies: `auth-core`, `org-tenant-core`, `role-policy-core`, `audit-core`
+- Requested capabilities: `ui.register.admin`, `api.rest.mount`, `data.write.execution`
+- Integration model: Actions+Resources+UI
+- ERPNext doctypes used as parity references: none declared
+- Recovery ownership should stay with the host orchestration layer when the plugin does not explicitly export jobs, workflows, or lifecycle events.

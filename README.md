@@ -4,11 +4,9 @@
   <img src="./docs/assets/gutu-mascot.png" alt="Gutu mascot" width="220" />
 </p>
 
-Governed run and issue workspaces with runtime service lifecycle controls for preview, code, and operator-facing execution environments.
+Governed run and issue workspaces with preview, browser, code, and runtime service lifecycle controls.
 
-![Maturity: Hardened](https://img.shields.io/badge/Maturity-Hardened-0f766e) ![Verification: Docs+Build+Typecheck+Lint+Test+Contracts+Integration+Migrations](https://img.shields.io/badge/Verification-Docs%2BBuild%2BTypecheck%2BLint%2BTest%2BContracts%2BIntegration%2BMigrations-6b7280) ![DB: postgres+sqlite](https://img.shields.io/badge/DB-postgres%2Bsqlite-2563eb) ![Integration Model: Actions+Resources+UI](https://img.shields.io/badge/Integration%20Model-Actions%2BResources%2BUI-6b7280)
-
-**Maturity Tier:** `Hardened`
+![Maturity: Hardened](https://img.shields.io/badge/Maturity-Hardened-2563eb) ![Verification: Build+Typecheck+Lint+Test+Contracts+Migrations+Integration](https://img.shields.io/badge/Verification-Build%2BTypecheck%2BLint%2BTest%2BContracts%2BMigrations%2BIntegration-2563eb) ![DB: postgres+sqlite](https://img.shields.io/badge/DB-postgres%2Bsqlite-2563eb) ![Integration Model: Actions+Resources+UI](https://img.shields.io/badge/Integration%20Model-Actions%2BResources%2BUI-6b7280)
 
 ## Part Of The Gutu Stack
 
@@ -16,30 +14,35 @@ Governed run and issue workspaces with runtime service lifecycle controls for pr
 | --- | --- |
 | Repo kind | First-party plugin |
 | Domain group | AI Systems |
-| Primary focus | realized workspaces, runtime services, preview and runner controls |
-| Best when | You want governed execution environments instead of opaque sidecar services tied to agent runs. |
+| Default category | AI & Automation / Execution Workspaces |
+| Primary focus | execution workspaces, runtime services, workspace realization |
+| Best when | You need a governed domain boundary with explicit contracts and independent release cadence. |
 | Composes through | Actions+Resources+UI |
 
-- `execution-workspaces-core` is the control plane for workspaces and runtime services used by governed runs and recovery flows.
-- It keeps environment scope, isolation mode, and service lifecycle visible to operators and higher-level packs.
+- Gutu keeps plugins as independent repos with manifest-governed boundaries, compatibility channels, and verification lanes instead of hiding everything behind one giant mutable codebase.
+- This plugin is meant to compose through explicit actions, resources, jobs, workflows, and runtime envelopes, not through undocumented hook chains.
 
 ## What It Does Now
 
+Owns realized execution workspaces, runtime service inventory, and the durable state used to operate sandboxed AI execution environments.
+
 - Exports 4 governed actions: `execution.workspaces.realize`, `execution.runtime-services.start`, `execution.runtime-services.restart`, `execution.runtime-services.stop`.
-- Owns 2 public resources: `execution.workspaces`, `execution.runtime-services`.
-- Adds an `execution` workspace with a control room for active workspaces and running services.
-- Persists isolation mode, environment scope, repo reference, and runtime-service status for each workspace.
-- Provides the execution-plane surface referenced by Company Builder and future out-of-process runner handoff flows.
+- Owns 2 resource contracts: `execution.workspaces`, `execution.runtime-services`.
+- Adds richer admin workspace contributions on top of the base UI surface.
+- Defines a durable data schema contract even though no explicit SQL helper module is exported.
 
 ## Maturity
 
-`execution-workspaces-core` is `Hardened` because workspace realization and runtime service lifecycle are durable, operator-visible, migration-covered, and validated in dedicated integration tests.
+**Maturity Tier:** `Hardened`
+
+This tier is justified because unit coverage exists, contract coverage exists, integration coverage exists, and migration coverage exists.
 
 ## Verified Capability Summary
 
-- Group: **AI Systems**
-- Verification surface: **Docs+Build+Typecheck+Lint+Test+Contracts+Integration+Migrations**
-- Tests discovered: **6** files across unit, contract, integration, and migration lanes
+- Domain group: **AI Systems**
+- Default category: **AI & Automation / Execution Workspaces**
+- Verification surface: **Build+Typecheck+Lint+Test+Contracts+Migrations+Integration**
+- Tests discovered: **6** total files across unit, contract, integration, migration lanes
 - Integration model: **Actions+Resources+UI**
 - Database support: **postgres + sqlite**
 
@@ -49,7 +52,7 @@ Governed run and issue workspaces with runtime service lifecycle controls for pr
 | --- | --- |
 | Package | `@plugins/execution-workspaces-core` |
 | Manifest ID | `execution-workspaces-core` |
-| Repo | `gutu-plugin-execution-workspaces-core` |
+| Repo | [gutu-plugin-execution-workspaces-core](https://github.com/gutula/gutu-plugin-execution-workspaces-core) |
 | Depends On | `auth-core`, `org-tenant-core`, `role-policy-core`, `audit-core` |
 | Requested Capabilities | `ui.register.admin`, `api.rest.mount`, `data.write.execution` |
 | Provided Capabilities | `execution.workspaces`, `execution.runtime-services` |
@@ -63,15 +66,22 @@ Governed run and issue workspaces with runtime service lifecycle controls for pr
 | --- | --- | --- |
 | Actions | 4 | `execution.workspaces.realize`, `execution.runtime-services.start`, `execution.runtime-services.restart`, `execution.runtime-services.stop` |
 | Resources | 2 | `execution.workspaces`, `execution.runtime-services` |
-| Workspaces | 1 | `execution` |
-| Runtime Controls | 3 | start, restart, stop |
-| UI | Present | control room, admin commands |
+| Jobs | 0 | No job catalog exported |
+| Workflows | 0 | No workflow catalog exported |
+| UI | Present | base UI surface, admin contributions |
+| Owned Entities | 0 | No explicit domain catalog yet |
+| Reports | 0 | No explicit report catalog yet |
+| Exception Queues | 0 | No explicit exception queues yet |
+| Operational Scenarios | 0 | No explicit operational scenario matrix yet |
+| Settings Surfaces | 0 | No explicit settings surface catalog yet |
+| ERPNext Refs | 0 | No direct ERPNext reference mapping declared |
 
 ## Quick Start For Integrators
 
-Use this repo inside a compatible Gutu workspace so its `workspace:*` dependencies resolve truthfully.
+Use this repo inside a **compatible Gutu workspace** or the **ecosystem certification workspace** so its `workspace:*` dependencies resolve honestly.
 
 ```bash
+# from a compatible workspace that already includes this plugin's dependency graph
 bun install
 bun run build
 bun run test
@@ -79,19 +89,14 @@ bun run docs:check
 ```
 
 ```ts
-import {
-  manifest,
-  realizeExecutionWorkspaceAction,
-  restartRuntimeServiceAction,
-  ExecutionWorkspaceResource,
-  RuntimeServiceResource
-} from "@plugins/execution-workspaces-core";
+import { manifest, realizeExecutionWorkspaceAction, ExecutionWorkspaceResource, adminContributions, uiSurface } from "@plugins/execution-workspaces-core";
 
 console.log(manifest.id);
 console.log(realizeExecutionWorkspaceAction.id);
-console.log(restartRuntimeServiceAction.id);
-console.log(ExecutionWorkspaceResource.id, RuntimeServiceResource.id);
+console.log(ExecutionWorkspaceResource.id);
 ```
+
+Use the root repo scripts for day-to-day work **after the workspace is bootstrapped**, or run the nested package directly from `framework/builtin-plugins/execution-workspaces-core` if you need lower-level control.
 
 ## Current Test Coverage
 
@@ -103,17 +108,25 @@ console.log(ExecutionWorkspaceResource.id, RuntimeServiceResource.id);
 
 ## Known Boundaries And Non-Goals
 
-- This plugin models workspace and runtime-service state; it does not provision real container or VM infrastructure yet.
-- Browser automation and external runner plumbing remain future composition layers on top of these contracts.
-- Secret injection and connector auth remain owned by `integration-core`.
+- Not an everything-and-the-kitchen-sink provider abstraction layer.
+- Not a substitute for explicit approval, budgeting, and audit governance in the surrounding platform.
+- Cross-plugin composition should use Gutu command, event, job, and workflow primitives. This repo should not be documented as exposing a generic WordPress-style hook system unless one is explicitly exported.
 
 ## Recommended Next Milestones
 
-- Add environment bootstrap and teardown contracts for realized workspaces.
-- Add browser-runner and code-runner lifecycle telemetry.
-- Expand workspace handoff evidence for `ai-core` runner delegation.
-- Add isolation verification and environment-policy conformance checks.
+- Deepen runtime diagnostics and lifecycle reconciliation as more AI and automation flows depend on long-lived execution environments.
+- Add clearer infrastructure handoff guidance where external runtimes or clusters start backing these workspaces.
+- Add deeper provider, persistence, or evaluation integrations only where the shipped control-plane contracts already prove stable.
+- Expand operator diagnostics and release gating where the current lifecycle already exposes strong evidence paths.
+- Promote important downstream reactions into explicit commands, jobs, or workflow steps instead of relying on implicit coupling.
 
 ## More Docs
 
-See [DEVELOPER.md](./DEVELOPER.md), [TODO.md](./TODO.md), [SECURITY.md](./SECURITY.md), and [CONTRIBUTING.md](./CONTRIBUTING.md).
+See [DEVELOPER.md](./DEVELOPER.md), [TODO.md](./TODO.md), [SECURITY.md](./SECURITY.md), [CONTRIBUTING.md](./CONTRIBUTING.md). The internal domain sources used to build those docs live under:
+
+- `plugins/gutu-plugin-execution-workspaces-core/framework/builtin-plugins/execution-workspaces-core/docs/AGENT_CONTEXT.md`
+- `plugins/gutu-plugin-execution-workspaces-core/framework/builtin-plugins/execution-workspaces-core/docs/BUSINESS_RULES.md`
+- `plugins/gutu-plugin-execution-workspaces-core/framework/builtin-plugins/execution-workspaces-core/docs/EDGE_CASES.md`
+- `plugins/gutu-plugin-execution-workspaces-core/framework/builtin-plugins/execution-workspaces-core/docs/FLOWS.md`
+- `plugins/gutu-plugin-execution-workspaces-core/framework/builtin-plugins/execution-workspaces-core/docs/GLOSSARY.md`
+- `plugins/gutu-plugin-execution-workspaces-core/framework/builtin-plugins/execution-workspaces-core/docs/MANDATORY_STEPS.md`
